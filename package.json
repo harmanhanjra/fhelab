@@ -1,0 +1,11 @@
+{
+  "name": "fhelab",
+  "version": "1.0.0",
+  "description": "Toy BFV-style homomorphic encryption lab — add & multiply on encrypted data over Z_q[x]/(x^n+1). Zero dependencies.",
+  "main": "src/fhe.js",
+  "scripts": {
+    "test": "node tests/test_fhelab.js"
+  },
+  "keywords": ["fhe", "homomorphic-encryption", "bfv", "cryptography", "lattice"],
+  "license": "MIT"
+}

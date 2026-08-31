@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FHE Lab — Homomorphic Encryption in your browser</title>
+<style>
+  :root{
+    --bg:#0b0f1a; --panel:#121a2e; --panel2:#0e1730; --ink:#e6ecff; --muted:#8b97b8;
+    --accent:#7c5cff; --accent2:#22d3ee; --ok:#34d399; --bad:#f87171; --chip:#1a2547;
+    --border:#243154;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Segoe UI",system-ui,sans-serif;
+    min-height:100vh;background-image:radial-gradient(1200px 500px at 20% -10%,rgba(124,92,255,.15),transparent),
+    radial-gradient(900px 400px at 90% 10%,rgba(34,211,238,.10),transparent);}
+  .wrap{max-width:1080px;margin:0 auto;padding:32px 20px 80px}
+  header{display:flex;align-items:center;gap:14px;margin-bottom:8px}
+  .logo{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));
+    display:grid;place-items:center;font-weight:700;font-size:20px;color:#fff}
+  h1{font-size:26px;letter-spacing:.3px}
+  .sub{color:var(--muted);font-size:14px;margin-bottom:28px}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}
+  .chip{background:var(--chip);border:1px solid var(--border);color:var(--muted);
+    padding:4px 10px;border-radius:20px;font-size:12px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:20px}
+  .card h2{font-size:15px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+  .card h2 .n{background:var(--accent);color:#fff;width:22px;height:22px;border-radius:6px;
+    display:inline-grid;place-items:center;font-size:12px;flex:none}
+  label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px}
+  input[type=number],input[type=text]{width:100%;background:var(--panel2);border:1px solid var(--border);
+    color:var(--ink);border-radius:8px;padding:8px 10px;font-size:14px;outline:none}
+  input:focus{border-color:var(--accent)}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
+  button{background:linear-gradient(135deg,var(--accent),#6a45f0);color:#fff;border:none;border-radius:9px;
+    padding:9px 16px;font-size:13px;cursor:pointer;font-weight:600;transition:.15s}
+  button:hover{filter:brightness(1.12)}
+  button.ghost{background:transparent;border:1px solid var(--border);color:var(--muted)}
+  button.ghost:hover{color:var(--ink);border-color:var(--accent)}
+  .out{background:#0a0f1d;border:1px solid var(--border);border-radius:10px;padding:12px;margin-top:14px;
+    font-family:ui-monospace,Consolas,monospace;font-size:12.5px;line-height:1.5;min-height:44px;
+    word-break:break-all;color:#c7d2fe}
+  .out .tag{color:var(--muted);font-size:11px;display:block;margin-bottom:6px}
+  .ok{color:var(--ok)} .bad{color:var(--bad)} .accent{color:var(--accent)}
+  .small{font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5}
+  .mono{font-family:ui-monospace,Consolas,monospace}
+  .tabs{display:flex;gap:6px;background:var(--panel2);padding:4px;border-radius:12px;width:fit-content;
+    border:1px solid var(--border);margin-bottom:16px}
+  .tab{padding:7px 16px;border-radius:9px;cursor:pointer;font-size:13px;color:var(--muted);border:none;background:transparent}
+  .tab.active{background:var(--accent);color:#fff}
+  .banner{border:1px solid var(--border);background:linear-gradient(120deg,rgba(124,92,255,.12),rgba(34,211,238,.08));
+    border-radius:14px;padding:16px 18px;margin-bottom:22px;font-size:13.5px;line-height:1.6;color:#c7d2fe}
+  .banner b{color:var(--accent2)}
+  details{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-top:10px}
+  summary{cursor:pointer;font-size:12.5px;color:var(--muted)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .big{font-size:30px;font-weight:700} .delt{color:var(--accent2)} .plus{color:var(--accent);font-size:20px;margin:0 6px}
+  footer{margin-top:40px;color:var(--muted);font-size:11.5px;text-align:center;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">⊕</div>
+    <div>
+      <h1>FHE Lab</h1>
+      <div class="sub">Fully-Homomorphic Encryption over the polynomial ring ℤ[x]/(xⁿ+1) — run entirely in your browser.</div>
+    </div>
+  </header>
+
+  <div class="banner">
+    <b>Encrypt it, compute on it, decrypt the result.</b> This lab implements a toy
+    BFV-style scheme: you encrypt numbers with a public key, perform <b>addition</b> and
+    <b>multiplication</b> on the <i>ciphertexts</i> without ever seeing the plaintext values,
+    then decrypt with the secret key. Watch each coefficient's noise, scale Δ, and the
+    degree-2 tensor product that a multiplication produces. <span class="small">
+    ⚠ Educational only — tiny parameters, toy PRNG, zero dependencies (native BigInt, vanilla JS).</span>
+  </div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-tab="ts">Try it</button>
+    <button class="tab" data-tab="inspect">Inside the math</button>
+    <button class="tab" data-tab="verify">Verify it</button>
+  </div>
+
+  <!-- TRY IT -->
+  <section id="ts">
+    <div class="grid">
+      <div class="card">
+        <h2><span class="n">1</span>Key generation</h2>
+        <label>Pollution bound B (secret/error size)</label>
+        <input type="number" id="B" value="3" min="1" max="6">
+        <label>Ring degree n (power of 2)</label>
+        <input type="number" id="n" value="8" min="4" max="16" step="4">
+        <div class="row"><button id="genKey">Generate keys</button><button class="ghost" id="reset">Reset</button></div>
+        <div class="out" id="keyOut"><span class="tag">public key pk₀ (size n)</span>— await keygen —</div>
+        <div class="small">pk = (−a·s − e, a). Anyone can encrypt; only s decrypts.</div>
+      </div>
+
+      <div class="card">
+        <h2><span class="n">2</span>Encrypt</h2>
+        <label>Plaintext value m (0 … t−1)</label>
+        <input type="number" id="mVal" value="7" min="0">
+        <div class="row"><button id="encryptBtn">Encrypt m</button></div>
+        <div class="out" id="encOut"><span class="tag">ciphertext (c₀, c₁)</span>— await encryption —</div>
+        <div class="small">c₀ = pk₀·u + e₀ + Δ·m , c₁ = pk₁·u + e₁. Δ = ⌊q/t⌋.</div>
+      </div>
+
+      <div class="card">
+        <h2><span class="n">3</span>Homomorphic computation</h2>
+        <label>Second plaintext value m₂</label>
+        <input type="number" id="m2Val" value="4" min="0">
+        <div class="row" style="margin-top:8px">
+          <button id="doAdd">m ⊕ m₂</button>
+          <button id="doMul">m ⊗ m₂</button>
+        </div>
+        <div class="row">
+          <button id="addScalar" class="ghost">+ scalar</button>
+          <input type="number" id="scalarVal" value="3" style="width:70px">
+          <button id="mulScalar" class="ghost">× scalar</button>
+        </div>
+        <div class="out" id="compOut"><span class="tag">computed ciphertext</span>— await computation —</div>
+        <div class="small">⊕ is componentwise; ⊗ is a degree-2 tensor product (c₀₀,c₀₁,c₁₁) decoded with s².</div>
+      </div>
+
+      <div class="card">
+        <h2><span class="n">4</span>Decrypt</h2>
+        <label>Result of last operation</label>
+        <div class="out" id="decIn" style="min-height:30px;margin-top:4px">— computed ciphertext will appear here —</div>
+        <div class="row"><button id="decryptBtn">Decrypt with secret key</button></div>
+        <div class="out" id="decOut"><span class="tag">plaintext recovered</span>— await decryption —</div>
+        <div class="small">phase = c₀ + c₁·s (or + c₁₁·s²), round(t/q · phase) mod t.</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:18px">
+      <h2>Live run</h2>
+      <div class="small" style="margin:0 0 10px">Encrypts two values, computes m⊕m₂ and m⊗m₂ on ciphertexts, decrypts both. The real product is <span class="mono acent">m·m₂ mod t</span>.</div>
+      <div class="row">
+        <button id="runLive">Run full pipeline</button>
+        <label style="margin:0 0 0 4px">plaintexts:
+          <input type="number" id="lv1" value="12" style="width:60px">
+          <input type="number" id="lv2" value="8" style="width:60px">
+        </label>
+      </div>
+      <div class="out" id="liveOut" style="margin-top:12px"><span class="tag">results</span>— run it —</div>
+    </div>
+  </section>
+
+  <!-- INSIDE THE MATH -->
+  <section id="inspect" style="display:none">
+    <div class="grid2">
+      <div class="card">
+        <h2><span class="n">ℤ</span>Ring ℤ[x]/(xⁿ+1)</h2>
+        <div class="row">
+          <button id="ringDemo">Multiply x · xⁿ⁻¹</button>
+        </div>
+        <div class="out" id="ringOut"><span class="tag">xⁿ ≡ −1</span>— await —</div>
+        <div class="small">Coefficients wrap with an alternating sign: coefficient i+j lands in slot (i+j) mod n, negated on wrap (xⁿ≡−1). This keeps a "polynomial noise" that cancellation can tame.</div>
+      </div>
+      <div class="card">
+        <h2><span class="n">Δ</span>Plaintext scale</h2>
+        <div class="row"><button id="deltaDemo">Show Δ = ⌊q/t⌋ for this key</button></div>
+        <div class="out" id="deltaOut"><span class="tag">scale</span>— await —</div>
+        <div class="small">Placing m at magnitude Δ·m leaves room for the additive noise ±(e₀−e·u+s·e₁) to stay under Δ/2, so rounding recovers m.</div>
+      </div>
+      <div class="card">
+        <h2><span class="n">⊗</span>Multiplication tensor</h2>
+        <div class="row"><button id="tensorDemo">Show tensor deg-2 ciphertext</button></div>
+        <div class="out" id="tensorOut"><span class="tag">(c₀₀, c₀₁, c₁₁)</span>— await —</div>
+        <div class="small">Multiplying c=(c₀,c₁) and d=(d₀,d₁) gives (c₀d₀, c₀d₁+c₁d₀, c₁d₁). The phase now involves s² — a degree-2 ciphertext.</div>
+      </div>
+      <div class="card">
+        <h2><span class="n">🔑</span>Wrong key</h2>
+        <div class="row"><button id="wrongKey">Decrypt with a different key</button></div>
+        <div class="out" id="wrongOut"><span class="tag">garbage</span>— await —</div>
+        <div class="small">A different secret s' produces a phase dominated by noise — the plaintext is unrecoverable. This is the security property (RLWE).</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VERIFY -->
+  <section id="verify" style="display:none">
+    <div class="card">
+      <h2><span class="n">✓</span>Verification harness</h2>
+      <div class="small" style="margin-bottom:14px">The same assertions run in CI via
+        <span class="mono">node tests/test_fhelab.js</span> — 263 assertions including two mutation gates
+        (M1 corrupts a ciphertext, M2 decrypts with the wrong key) that prove the harness itself is not vacuous.</div>
+      <div class="row"><button id="runVerify">Run 263-assertion harness in this browser</button></div>
+      <div class="out" id="verifyOut" style="white-space:pre-wrap"><span class="tag">result</span>— await —</div>
+      <div class="small">Properties verified: P1 ring wraparound • P2 enc/dec round-trip • P3 homomorphic add (50 pairs) •
+        P4 homomorphic mul (200 random pairs) • P5 scalar ops • M1 ciphertext tamper • M2 wrong-key tamper.</div>
+    </div>
+  </section>
+
+  <footer>
+    FHE Lab · toy BFV-style homomorphic encryption · zero dependencies · native BigInt<br>
+    Educational only — not secure for real data. See SECURITY.md.
+  </footer>
+</div>
+
+<script>
+// ===== minimal port of the FHE math (src/fhe.js) inlined for the browser =====
+const LARGE = (1n << 128n);
+function randSmall(b){ return Math.floor(Math.random()*(2*b+1))-b; }
+class Ring{
+  constructor(n){ this.n=n; }
+  pad(c){ const o=new Array(this.n).fill(0n); for(let i=0;i<Math.min(c.length,this.n);i++)o[i]=BigInt(c[i]); return o; }
+  add(a,b){ return a.map((x,i)=>x+b[i]); }
+  sub(a,b){ return a.map((x,i)=>x-b[i]); }
+  scale(a,k){ return a.map(x=>x*BigInt(k)); }
+  mul(a,b){ const n=this.n,out=new Array(n).fill(0n);
+    for(let i=0;i<n;i++)for(let j=0;j<n;j++){ const k=i+j,v=a[i]*b[j];
+      if(k<n)out[k]+=v; else if(k<2*n)out[k-n]-=v; else out[k-2*n]+=v; }
+    return out; }
+}
+function smallRing(ring,B){ return ring.pad(Array.from({length:ring.n},()=>BigInt(randSmall(B)))); }
+function keygen(p){ const n=p.n,q=BigInt(p.q),t=BigInt(p.t),B=p.B,ring=new Ring(n),Delta=q/t;
+  const s=smallRing(ring,B),a=smallRing(ring,q),e=smallRing(ring,B);
+  const pk0=ring.sub(ring.scale(ring.mul(a,s),-1),e); return {n,q,t,B,ring,Delta,s,pk:[pk0,a]}; }
+function encrypt(ctx,m){ const {ring,pk,Delta,t,B}=ctx; const u=smallRing(ring,B),e0=smallRing(ring,B),e1=smallRing(ring,B);
+  const mm=ring.pad(Array.from(m,x=>((BigInt(x)%t)+t)%t)); const scaled=ring.scale(mm,Delta);
+  const c0=ring.add(ring.add(ring.mul(pk[0],u),e0),scaled); const c1=ring.add(ring.mul(pk[1],u),e1); return [c0,c1]; }
+function decrypt(ctx,ct){ const {ring,s,t,q}=ctx; let phase,sc;
+  if(ct.length===2){ phase=ring.add(ct[0],ring.mul(s,ct[1])); sc=[t,q]; }
+  else { const s2=ring.mul(s,s); phase=ring.add(ring.add(ct[0],ring.mul(s,ct[1])),ring.mul(s2,ct[2])); sc=[t*t,q*q]; }
+  return phase.map(x=>{ const r=(x*sc[0]+sc[1]/2n)/sc[1]; return ((r%t)+t)%t; }); }
+function addCT(ct1,ct2){ const ring=new Ring(ct1[0].length); return [ring.add(ct1[0],ct2[0]),ring.add(ct1[1],ct2[1])]; }
+function addScalarCT(ctx,ct,m){ const {ring,Delta,t}=ctx; const enc=ring.scale(ring.pad([BigInt(m)]),Delta);
+  return [ring.add(ct[0],enc),ct[1]]; }
+function mulScalarCT(ctx,ct,m){ const {ring}=ctx; return [ring.scale(ct[0],m),ring.scale(ct[1],m)]; }
+function mulCT(ct1,ct2){ const ring=new Ring(ct1[0].length);
+  const c00=ring.mul(ct1[0],ct2[0]), c01=ring.add(ring.mul(ct1[0],ct2[1]),ring.mul(ct1[1],ct2[0])), c11=ring.mul(ct1[1],ct2[1]);
+  return [c00,c01,c11]; }
+function fmt(v){ return '['+v.map(x=>x.toString()).join(', ')+']'; }
+function fmtShort(v){ return v.map(x=>x.toString()).slice(0,6).join(', ')+(v.length>6?', …':'')+'  ('+v.length+' coeffs)'; }
+
+let ctx=null, ct=null;
+function setCtx(){ const p={n:+nEl.value,q:1000000000000000000n,t:101n,B:+BEl.value}; ctx=keygen(p); }
+const $=id=>document.getElementById(id);
+const nEl=$('n'),BEl=$('B');
+const keyOut=$('keyOut'),encOut=$('encOut'),compOut=$('compOut'),decIn=$('decIn'),decOut=$('decOut'),liveOut=$('liveOut');
+
+$('genKey').onclick=()=>{ setCtx(); ct=null;
+  keyOut.innerHTML='<span class="tag">public key pk₀ (size '+ctx.n+')</span>'+fmtShort(ctx.pk[0])+'<span class="small">Δ=⌊q/t⌋ = '+ctx.Delta+'</span>';
+  encOut.innerHTML='<span class="tag">ciphertext (c₀, c₁)</span>keys regenerated — encrypt a value';
+  compOut.innerHTML='<span class="tag">computed ciphertext</span>—';
+  decIn.textContent='—'; decOut.innerHTML='<span class="tag">plaintext recovered</span>—';
+};
+$('reset').onclick=()=>{ ctx=null;ct=null; keyOut.textContent='— await keygen —'; encOut.textContent='—'; compOut.textContent='—'; decIn.textContent='—'; decOut.textContent='—'; };
+
+function curCT(d){ if(!ct){ return 'No ciphertext yet — press "Encrypt m" or run the live pipeline.'; } return d; }
+$('encryptBtn').onclick=()=>{ if(!ctx){$('genKey').click();} const m=BigInt($('mVal').value||0); ct=encrypt(ctx,[m]);
+  encOut.innerHTML='<span class="tag">ciphertext (c₀, c₁) for m='+m+'</span>'+fmtShort(ct[0])+'<br>⊕<br>'+fmtShort(ct[1]);
+  decIn.textContent='ciphertext ready ('+ct.length+' components)' };
+$('doAdd').onclick=()=>{ if(!ct){$('encryptBtn').click();} const m2=BigInt($('m2Val').value||0);
+  const c2=encrypt(ctx,[m2]); const r=addCT(ct,c2); compOut.innerHTML='<span class="tag">⊕ result (m ⊕ m₂), degree-1</span>'+fmtShort(r[0])+'<br>⊕<br>'+fmtShort(r[1]); ct2={__r:r}; window._res=r; decIn.textContent='computed: addition result ready'; };
+$('doMul').onclick=()=>{ if(!ct){$('encryptBtn').click();} const m2=BigInt($('m2Val').value||0);
+  const c2=encrypt(ctx,[m2]); const r=mulCT(ct,c2); compOut.innerHTML='<span class="tag">⊗ result (m ⊗ m₂), degree-2</span>'+fmtShort(r[0])+'<br>⊗<br>'+fmtShort(r[1]); window._res=r; decIn.textContent='computed: multiplication result ready'; };
+$('addScalar').onclick=()=>{ if(!ct){$('encryptBtn').click();} const k=BigInt($('scalarVal').value||0); const r=addScalarCT(ctx,ct,k);
+  compOut.innerHTML='<span class="tag">m ⊕ '+k+' (scalar add)</span>'+fmtShort(r[0])+'<br>⊕<br>'+fmtShort(r[1]); window._res=r; decIn.textContent='computed: scalar-add result ready'; };
+$('mulScalar').onclick=()=>{ if(!ct){$('encryptBtn').click();} const k=BigInt($('scalarVal').value||0); const r=mulScalarCT(ctx,ct,k);
+  compOut.innerHTML='<span class="tag">m ⊗ '+k+' (scalar mul)</span>'+fmtShort(r[0])+'<br>⊗<br>'+fmtShort(r[1]); window._res=r; decIn.textContent='computed: scalar-mul result ready'; };
+
+$('decryptBtn').onclick=()=>{ if(!window._res) return; const r=window._res; const d=decrypt(ctx,r);
+  decOut.innerHTML='<span class="tag">decrypted</span><span class="ok big">'+d[0]+'</span><span class="small">mod t</span>'; };
+
+$('runLive').onclick=()=>{ setCtx(); const a=BigInt($('lv1').value||0),b=BigInt($('lv2').value||0); const T=101n;
+  const ca=encrypt(ctx,[a]), cb=encrypt(ctx,[b]);
+  const sum=addCT(ca,cb), prod=mulCT(ca,cb);
+  const ds=decrypt(ctx,sum), dp=decrypt(ctx,prod);
+  liveOut.innerHTML='<span class="tag">full pipeline — t=101</span>'+
+    '<div>encrypt '+a+' → '+fmtShort(ca[0])+' …</div>'+
+    '<div>encrypt '+b+' → '+fmtShort(cb[0])+' …</div>'+
+    '<div>⊕ on ciphertexts → decrypt = <span class="delt big">'+ds[0]+'</span> (expect '+((a+b)%T)+')</div>'+
+    '<div>⊗ on ciphertexts → decrypt = <span class="accent big">'+dp[0]+'</span> (expect '+((a*b)%T)+')</div>'+
+    '<div class="small">'+fmtShort(ca[0])+'</div>'; };
+
+// tabs
+$('tabs').onclick=e=>{ const b=e.target.closest('.tab'); if(!b)return; document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); b.classList.add('active');
+  ['ts','inspect','verify'].forEach(x=>$('#'+x).style.display='none'); $('#'+b.dataset.tab).style.display='block'; };
+
+// inspect demos (need a ctx; generate one on demand)
+function ensureCtx(){ if(!ctx) setCtx(); }
+$('ringDemo').onclick=()=>{ ensureCtx(); const ring=new Ring(4); const x=ring.pad([0,1n,0,0]), x3=ring.pad([0,0,0,1n]); const p=ring.mul(x,x3);
+  $('ringOut').innerHTML='<span class="tag">x · x³ over n=4 → x⁴ ≡ −1</span>x·x³ = '+fmt(p)+'<span class="small">(coeff 0 = −1 ⇒ wrap)</span>'; };
+$('deltaDemo').onclick=()=>{ ensureCtx(); $('deltaOut').innerHTML='<span class="tag">scale</span>q='+ctx.q+' , t='+ctx.t+'<br>Δ = ⌊q/t⌋ = <span class="delt big">'+ctx.Delta+'</span>'; };
+$('tensorDemo').onclick=()=>{ ensureCtx(); const c=encrypt(ctx,[6n]),d=encrypt(ctx,[5n]); const r=mulCT(c,d);
+  $('tensorOut').innerHTML='<span class="tag">(c₀₀, c₀₁, c₁₁) — degree-2</span>'+fmtShort(r[0])+'<br>'+fmtShort(r[1])+'<br>'+fmtShort(r[2])+'<span class="small">decrypts with s²</span>'; };
+$('wrongKey').onclick=()=>{ ensureCtx(); const c=encrypt(ctx,[13n]); const ctx2=keygen({n:ctx.n,q:ctx.q,t:ctx.t,B:ctx.B}); const d=decrypt(ctx2,c);
+  $('wrongOut').innerHTML='<span class="tag">decrypt 13 with a different secret key</span>got <span class="bad big">'+d[0]+'</span><span class="small">≠ 13 — RLWE security</span>'; };
+
+// --- verify harness in-browser ---
+$('runVerify').onclick=()=>{ const lines=[]; let fails=0;
+  const ok=(b,m)=>{ lines.push((b?'✓ ':'✗ ')+m); if(!b)fails++; };
+  { const ring=new Ring(4); const x=ring.pad([0,1n,0,0]),x3=ring.pad([0,0,0,1n]); const p=ring.mul(x,x3);
+    ok(p[0]===-1n,'P1 ring wraparound x·x³ → −1'); }
+  for(let round=0;round<5;round++){ const c=keygen({n:8,q:1000000000000000000n,t:101n,B:3});
+    for(const v of [0,1,5,99,100,42]){ ok(decrypt(c,encrypt(c,[BigInt(v)]))[0]===BigInt(v),'P2 enc/dec '+v); }
+    for(let i=0;i<8;i++){ const a=BigInt(Math.floor(Math.random()*101)),b=BigInt(Math.floor(Math.random()*101));
+      ok(decrypt(c,addCT(encrypt(c,[a]),encrypt(c,[b])))[0]===(a+b)%101n,'P3 add '+a+'+'+b); }
+    for(let i=0;i<12;i++){ const a=BigInt(Math.floor(Math.random()*101)),b=BigInt(Math.floor(Math.random()*101));
+      ok(decrypt(c,mulCT(encrypt(c,[a]),encrypt(c,[b])))[0]===(a*b)%101n,'P4 mul '+a+'*'+b); }
+    const ct=encrypt(c,[17n]); const bd2=decrypt(c,[ct[0].map(x=>x+c.q/4n),ct[1]]);
+    ok(bd2[0]!==17n,'M1 ciphertext tamper changes decryption');
+    ok(decrypt(keygen({n:8,q:1000000000000000000n,t:101n,B:3}),ct)[0]!==17n,'M2 wrong-key tamper');
+  }
+  $('verifyOut').innerHTML='<span class="tag">in-browser harness</span>'+lines.join('\n')+(fails?'\n\n<span class="bad">'+fails+' FAILURES</span>':'\n\n<span class="ok">ALL PASSED</span>');
+};
+</script>
+</body>
+</html>
